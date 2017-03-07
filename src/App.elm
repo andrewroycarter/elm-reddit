@@ -112,8 +112,7 @@ getSubreddit subreddit =
             Http.request
                 { method = "GET"
                 , headers =
-                    [ Http.header "Access-Control-Request-Method" "GET"
-                    , Http.header "Accept" "application/json"
+                    [ Http.header "Accept" "application/json"
                     ]
                 , url = "https://api.reddit.com/r/" ++ subreddit
                 , body = Http.emptyBody
