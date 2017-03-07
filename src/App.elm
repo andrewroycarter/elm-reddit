@@ -1,11 +1,8 @@
 module App exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Http
-import Json.Decode exposing (int, string, float, nullable, Decoder)
-import Json.Decode.Pipeline exposing (decode, required)
+import Json.Decode exposing (Decoder, map, map2, at, string, list)
 
 
 type alias Post =
@@ -14,35 +11,47 @@ type alias Post =
     }
 
 
+type alias Listing =
+    { posts : List Post
+    }
+
+
 type alias Model =
-    { posts : List Post }
+    { listing : Listing }
+
+
+type Msg
+    = NewListing (Result Http.Error Listing)
 
 
 init : String -> ( Model, Cmd Msg )
 init path =
-    ( Model [], Cmd.none )
-
-
-type Msg
-    = NoOp
-    | NewListing (Result Http.Error Post)
+    ( Model <| Listing [], getFrontPage )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        NewListing (Ok listing) ->
+            ( { model | listing = listing }
+            , Cmd.none
+            )
+
+        NewListing (Err _) ->
+            ( model, Cmd.none )
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ titleView
+        , postsListView model
         ]
 
 
 postsListView : Model -> Html Msg
 postsListView model =
-    ul [] <| List.map postView model.posts
+    ul [] <| List.map postView model.listing.posts
 
 
 postView : Post -> Html Msg
@@ -60,23 +69,31 @@ subscriptions model =
     Sub.none
 
 
-
 getFrontPage : Cmd Msg
 getFrontPage =
     let
-        url =
-            "api.reddit.com"
         request =
-            Http.get url postDecoder
+            Http.request
+                { method = "GET"
+                , headers = []
+                , url = "http://api.reddit.com/.json"
+                , body = Http.emptyBody
+                , expect = Http.expectJson (listingDecoder)
+                , timeout = Nothing
+                , withCredentials = False
+                }
     in
         Http.send NewListing request
 
 
-listingDecoder : Decoder List Post 
+listingDecoder : Decoder Listing
 listingDecoder =
+    Json.Decode.map Listing
+        (at [ "data", "children" ] <| list postDecoder)
+
 
 postDecoder : Decoder Post
 postDecoder =
-    decode Post
-        |> required "title" string "-"
-        |> required "subreddit" string "-
+    map2 Post
+        (at [ "data", "title" ] string)
+        (at [ "data", "subreddit" ] string)
