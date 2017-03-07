@@ -79,7 +79,15 @@ postView post =
 
 postThumbnailView : Post -> Html Msg
 postThumbnailView post =
-    img [ src post.thumbnail ] []
+    case post.thumbnail of
+        "self" ->
+            span [] []
+
+        "default" ->
+            span [] []
+
+        _ ->
+            img [ src post.thumbnail ] []
 
 
 postLinkView : Post -> Html Msg
