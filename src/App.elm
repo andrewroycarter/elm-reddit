@@ -1,15 +1,17 @@
 module App exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (href, src, value)
+import Html.Events exposing (onClick, onInput)
 import Http
-import Json.Decode exposing (Decoder, map, map3, at, string, list)
+import Json.Decode exposing (Decoder, map, map4, at, string, list)
 
 
 type alias Post =
     { title : String
     , subreddit : String
     , permalink : String
+    , thumbnail : String
     }
 
 
@@ -19,16 +21,20 @@ type alias Listing =
 
 
 type alias Model =
-    { listing : Listing }
+    { listing : Listing
+    , subreddit : String
+    }
 
 
 type Msg
     = NewListing (Result Http.Error Listing)
+    | NewSubreddit String
+    | GoButtonPressed
 
 
 init : String -> ( Model, Cmd Msg )
 init path =
-    ( Model <| Listing [], getFrontPage )
+    ( Model (Listing []) "frontpage", getSubreddit "frontpage" )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -42,23 +48,43 @@ update msg model =
         NewListing (Err _) ->
             ( model, Cmd.none )
 
+        NewSubreddit subreddit ->
+            ( { model | subreddit = subreddit }, Cmd.none )
+
+        GoButtonPressed ->
+            ( model, getSubreddit model.subreddit )
+
 
 view : Model -> Html Msg
 view model =
     div []
         [ titleView
-        , postsListView model
+        , subredditInputView model.subreddit
+        , postsListView model.listing
         ]
 
 
-postsListView : Model -> Html Msg
-postsListView model =
-    ul [] <| List.map postView model.listing.posts
+postsListView : Listing -> Html Msg
+postsListView listing =
+    ul [] <| List.map postView listing.posts
 
 
 postView : Post -> Html Msg
 postView post =
-    li [] [ a [ href <| "http://www.reddit.com/" ++ post.permalink ] [ text post.title ] ]
+    li []
+        [ postThumbnailView post
+        , postLinkView post
+        ]
+
+
+postThumbnailView : Post -> Html Msg
+postThumbnailView post =
+    img [ src post.thumbnail ] []
+
+
+postLinkView : Post -> Html Msg
+postLinkView post =
+    a [ href <| "http://www.reddit.com/" ++ post.permalink ] [ text post.title ]
 
 
 titleView : Html Msg
@@ -66,19 +92,30 @@ titleView =
     h1 [] [ text "Reddit" ]
 
 
+subredditInputView : String -> Html Msg
+subredditInputView subreddit =
+    div []
+        [ input [ value subreddit, onInput NewSubreddit ] []
+        , button [ onClick GoButtonPressed ] [ text "go" ]
+        ]
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
 
 
-getFrontPage : Cmd Msg
-getFrontPage =
+getSubreddit : String -> Cmd Msg
+getSubreddit subreddit =
     let
         request =
             Http.request
                 { method = "GET"
-                , headers = []
-                , url = "http://api.reddit.com/.json"
+                , headers =
+                    [ Http.header "Access-Control-Request-Method" "GET"
+                    , Http.header "Accept" "application/json"
+                    ]
+                , url = "https://api.reddit.com/r/" ++ subreddit
                 , body = Http.emptyBody
                 , expect = Http.expectJson (listingDecoder)
                 , timeout = Nothing
@@ -96,7 +133,8 @@ listingDecoder =
 
 postDecoder : Decoder Post
 postDecoder =
-    map3 Post
+    map4 Post
         (at [ "data", "title" ] string)
         (at [ "data", "subreddit" ] string)
         (at [ "data", "permalink" ] string)
+        (at [ "data", "thumbnail" ] string)
