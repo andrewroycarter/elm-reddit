@@ -1,13 +1,15 @@
 module App exposing (..)
 
 import Html exposing (..)
+import Html.Attributes exposing (href)
 import Http
-import Json.Decode exposing (Decoder, map, map2, at, string, list)
+import Json.Decode exposing (Decoder, map, map3, at, string, list)
 
 
 type alias Post =
     { title : String
     , subreddit : String
+    , permalink : String
     }
 
 
@@ -56,7 +58,7 @@ postsListView model =
 
 postView : Post -> Html Msg
 postView post =
-    li [] [ text post.title ]
+    li [] [ a [ href <| "http://www.reddit.com/" ++ post.permalink ] [ text post.title ] ]
 
 
 titleView : Html Msg
@@ -94,6 +96,7 @@ listingDecoder =
 
 postDecoder : Decoder Post
 postDecoder =
-    map2 Post
+    map3 Post
         (at [ "data", "title" ] string)
         (at [ "data", "subreddit" ] string)
+        (at [ "data", "permalink" ] string)
