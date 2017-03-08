@@ -1,23 +1,23 @@
 body {
   font-family: 'Source Sans Pro', 'Trebuchet MS', 'Lucida Grande', 'Bitstream Vera Sans', 'Helvetica Neue', sans-serif;
-  font-size: 30px;
-  margin: 0;
-  text-align: center;
-  color: #293c4b;
+  margin: 20px;  
 }
 
-img {
-  margin: 20px 0;
-  max-width: 200px;
+h1.title {
+
 }
 
-ul {
-  list-style-type: none;
+ul.listing {
+  display: table;
   text-align: left;
+  float: left;
 }
 
-li {
+ul.listing li {
+  vertical-align: top;
+  display: table-cell;
   float: left;
   width: 100%;
-  margin-bottom: 50px;
+  margin-bottom: 20px;
+  min-height: 100px;
 }

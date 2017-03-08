@@ -1,7 +1,7 @@
 module App exposing (..)
 
 import Html exposing (..)
-import Html.Attributes exposing (href, src, value)
+import Html.Attributes exposing (href, src, value, class)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode exposing (Decoder, map, map4, at, string, list)
@@ -66,7 +66,7 @@ view model =
 
 postsListView : Listing -> Html Msg
 postsListView listing =
-    ul [] <| List.map postView listing.posts
+    ul [ class "listing" ] <| List.map postView listing.posts
 
 
 postView : Post -> Html Msg
